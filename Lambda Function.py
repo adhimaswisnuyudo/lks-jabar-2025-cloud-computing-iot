@@ -1,22 +1,20 @@
-import boto3
-import os
 import json
+import boto3
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['TABLE_NAME'])
+table = dynamodb.Table('Your Table Name')
 
-s3 = boto3.client('s3')
-BUCKET_NAME = os.environ['BUCKET_NAME']  # Tambahkan ini juga di environment variable
 def lambda_handler(event, context):
-    print("Received event:", event)
+    print("📥 Incoming event:", json.dumps(event))
 
-    device_id = event.get('device_id')
-    timestamp = event.get('timestamp')
-    lux = event.get('lux')
+    try:
+        # langsung akses key
+        device_id = event['device_id']
+        lux = int(event['lux'])
+        timestamp = event['timestamp']
 
-    if device_id and timestamp and lux is not None:
-        # Simpan ke DynamoDB
-        table.put_item(
+        # insert ke DynamoDB
+        response = table.put_item(
             Item={
                 'device_id': device_id,
                 'timestamp': timestamp,
@@ -24,27 +22,15 @@ def lambda_handler(event, context):
             }
         )
 
-        # Simpan ke latest.json di S3
-        latest_data = {
-            'device_id': device_id,
-            'timestamp': timestamp,
-            'lux': lux
-        }
-
-        s3.put_object(
-            Bucket=BUCKET_NAME,
-            Key='latest.json',
-            Body=json.dumps(latest_data),
-            ContentType='application/json',
-            # ACL='public-read'  # opsional, jika ingin bisa diakses publik
-        )
-
+        print(f"✅ Data saved: {device_id}, lux: {lux}, time: {timestamp}")
         return {
             'statusCode': 200,
-            'body': 'Data inserted and latest.json updated successfully'
+            'body': json.dumps('IoT data saved to DynamoDB')
         }
-    else:
+
+    except Exception as e:
+        print(f"❌ Error saving to DynamoDB: {e}")
         return {
-            'statusCode': 400,
-            'body': 'Missing data in the event'
+            'statusCode': 500,
+            'body': json.dumps(str(e))
         }
