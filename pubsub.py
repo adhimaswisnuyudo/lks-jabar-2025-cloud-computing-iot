@@ -98,7 +98,7 @@ if __name__ == '__main__':
     publish_count = 1
     while (publish_count <= message_count) or (message_count == 0):
         message = {
-            "device_id": "<namaKota/Kab>",
+            "device_id": "sensor<namaKota/Kab>",
             "lux": random.randint(300, 1000),
             "timestamp": datetime.utcnow().isoformat() + "Z"
         }
